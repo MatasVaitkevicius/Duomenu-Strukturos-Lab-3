@@ -122,6 +122,33 @@ public class HashMap<K, V> implements EvaluableMap<K, V> {
         return get(key) != null;
     }
 
+    /*  -----------------------------------------------------------------------------------------
+    tai yra metodas nr 1.
+    grąžinantį true, jei atvaizdyje egzistuoja vienas 
+    ar daugiau raktų metodo argumente nurodytai reikšmei.
+     */
+    public boolean containsValue(Object value) {
+        if (value == null) {
+            throw new NullPointerException("Null pointer in put");
+        }
+
+        for (int i = 0; i < table.length; i++) {
+            if (table[i] != null) {
+                if (table[i].value.equals(value)) {
+                    return true;
+                }
+                Node<K, V> elem = table[i];
+                while (elem.next != null) {
+                    elem = elem.next;
+                    if (elem.value.equals(value)) {
+                        return true;
+                    }
+                }
+            }
+        }
+        return false;
+    }
+
     /**
      * Atvaizdis papildomas nauja pora.
      *
@@ -155,6 +182,21 @@ public class HashMap<K, V> implements EvaluableMap<K, V> {
         }
 
         return value;
+    }
+
+    /*  -----------------------------------------------------------------------------------------
+    tai yra metodas nr 4.
+    Jei argumente nurodytas raktas neturi reikšmės šiame atvaizdyje, tada
+    argumente nurodyta raktas - reikšmė pora įrašoma ir grąžinama null. Kitu 
+    atveju grąžinama atvaizdyje jau egzistuojanti raktą atitinkanti reikšmė.
+     */
+    public V putIfAbsent(K key, V value) {
+        if (contains(key)) {
+            return get(key);
+        } else {
+            put(key, value);
+            return null;
+        }
     }
 
     /**
@@ -320,6 +362,13 @@ public class HashMap<K, V> implements EvaluableMap<K, V> {
         return maxChainSize;
     }
 
+    public double averageChainSize() {
+        if (table == null) {
+            throw new NullPointerException("Null pointer");
+        }
+        return size * 1.0 / (table.length - numberOfEmpties());
+    }
+
     /**
      * Grąžina formuojant maišos lentelę įvykusių permaišymų kiekį.
      *
@@ -358,6 +407,70 @@ public class HashMap<K, V> implements EvaluableMap<K, V> {
     @Override
     public int getChainsCounter() {
         return chainsCounter;
+    }
+
+    public int numberOfEmpties() {
+        int numberOfEmpties = 0;
+        for (int i = 0; i < table.length; i++) {
+            if (table[i] == null) {
+                numberOfEmpties++;
+            }
+        }
+        return numberOfEmpties;
+    }
+
+    public int getNumberOfCollisions() {
+        if (table == null) {
+            throw new NullPointerException("Null pointer");
+        }
+        int numberOfCollisions = size + numberOfEmpties() - table.length;
+        return numberOfCollisions;
+    }
+
+    public String chainList() {
+        String ch = "";
+        int currentLenght = 0;
+        int[] Lenghts = new int[table.length];
+        for (int i = 0; i < table.length; i++) {
+            currentLenght = 0;
+            if (table[i] != null) {
+                currentLenght++;
+                Node<K, V> value = table[i];
+                while (value.next != null) {
+                    value = value.next;
+                    currentLenght++;
+                }
+            }
+            Lenghts[i] = currentLenght;
+        }
+        int numberOf = 0;
+        for (int i = 0; i < size; i++) {
+            numberOf = 0;
+            for (int j : Lenghts) {
+                if (j == i) {
+                    numberOf++;
+                }
+            }
+            if (numberOf != 0) {
+                ch = ch + "ilgis: " + i + " kiekis " + numberOf + "\n";
+            }
+        }
+        return ch;
+    }
+
+    public java.util.Set<K> keySet() {
+        java.util.Set<K> result = new java.util.HashSet<>();
+        for (Node<K, V> element : table) {
+            if (element != null) {
+                Node<K, V> value = element;
+                result.add(value.key);
+                while (value.next != null) {
+                    value = value.next;
+                    result.add(value.key);
+                }
+            }
+        }
+        return result;
     }
 
     protected static class Node<K, V> {

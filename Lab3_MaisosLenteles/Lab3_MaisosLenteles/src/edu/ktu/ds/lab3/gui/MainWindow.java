@@ -1,11 +1,12 @@
 package edu.ktu.ds.lab3.gui;
 
-import edu.ktu.ds.lab3.demo.Car;
-import edu.ktu.ds.lab3.demo.CarsGenerator;
-import edu.ktu.ds.lab3.demo.SimpleBenchmark;
+import edu.ktu.ds.lab3.vaitkevicius.SimpleBenchmark;
 import edu.ktu.ds.lab3.utils.HashType;
 import edu.ktu.ds.lab3.utils.ParsableHashMap;
+import edu.ktu.ds.lab3.utils.ParsableHashMapOa;
 import edu.ktu.ds.lab3.utils.ParsableMap;
+import edu.ktu.ds.lab3.vaitkevicius.Book;
+import edu.ktu.ds.lab3.vaitkevicius.BooksGenerator;
 import javafx.application.Platform;
 import javafx.beans.property.SimpleStringProperty;
 import javafx.beans.value.ObservableValue;
@@ -24,9 +25,11 @@ import javafx.stage.Stage;
 import javafx.stage.StageStyle;
 
 import java.io.File;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Locale;
 import java.util.ResourceBundle;
+import java.util.Set;
 import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.Semaphore;
 import java.util.concurrent.SynchronousQueue;
@@ -68,6 +71,10 @@ public class MainWindow extends BorderPane implements EventHandler<ActionEvent> 
     private static final Insets INSETS = new Insets(SPACING);
     private static final double SPACING_SMALLER = 2.0;
     private static final Insets INSETS_SMALLER = new Insets(SPACING_SMALLER);
+    private static final Book TEST_BOOK_1 = new Book("Jonas", "Gretute", 1999, 400);
+    private static final Book TEST_BOOK_2 = new Book("Ponas", "Pasaka", 1999, 420);
+    private static final Book TEST_BOOK_3 = new Book("Tadauskas", "Broliai grimai", 1999, 355);
+    private static final String[] TEST_BOOKS_IDS = {"TA101", "TA199", "TA102"};
 
     private final ComboBox cmbCollisionTypes = new ComboBox();
     private final ComboBox cmbHashFunctions = new ComboBox();
@@ -80,11 +87,11 @@ public class MainWindow extends BorderPane implements EventHandler<ActionEvent> 
     private MainWindowMenu mainWindowMenu;
     private final Stage stage;
 
-    private ParsableMap<String, Car> map;
+    private ParsableMap<String, Book> map;
     private int sizeOfInitialSubSet, sizeOfGenSet, colWidth, initialCapacity;
     private float loadFactor;
     private HashType ht = HashType.DIVISION;
-    private final CarsGenerator carsGenerator = new CarsGenerator();
+    private final BooksGenerator booksGenerator = new BooksGenerator();
 
     public MainWindow(Stage stage) {
         this.stage = stage;
@@ -116,7 +123,15 @@ public class MainWindow extends BorderPane implements EventHandler<ActionEvent> 
                     MESSAGES.getString("button1"),
                     MESSAGES.getString("button2"),
                     MESSAGES.getString("button3"),
-                    MESSAGES.getString("button4")}, 1, 4);
+                    MESSAGES.getString("button4"),
+                    MESSAGES.getString("button5"),
+                    MESSAGES.getString("button6"),
+                    MESSAGES.getString("button7"),
+                    MESSAGES.getString("button8"),
+                    MESSAGES.getString("button9"),
+                    MESSAGES.getString("button10"),
+                    MESSAGES.getString("button11")}, 1, 11);
+
         paneButtons.getButtons().forEach((btn) -> btn.setOnAction(this));
         IntStream.of(1, 3).forEach(p -> paneButtons.getButtons().get(p).setDisable(true));
 
@@ -292,12 +307,157 @@ public class MainWindow extends BorderPane implements EventHandler<ActionEvent> 
     private void handleButtons(Object source) {
         if (source.equals(paneButtons.getButtons().get(0))) {
             mapGeneration(null);
+            taInput.setDisable(false);
         } else if (source.equals(paneButtons.getButtons().get(1))) {
             mapPut();
         } else if (source.equals(paneButtons.getButtons().get(2))) {
             mapEfficiency();
         } else if (source.equals(paneButtons.getButtons().get(3))) {
-            KsGui.ounerr(taEvents, MESSAGES.getString("notImplemented"));
+            dataPut();
+        } else if (source.equals(paneButtons.getButtons().get(4))) {
+            removePairByKey();
+        } else if (source.equals(paneButtons.getButtons().get(5))) {
+            containsKey();
+        } else if (source.equals(paneButtons.getButtons().get(6))) {
+            containsValue();
+        } else if (source.equals(paneButtons.getButtons().get(7))) {
+            putIfAbsent();
+        } else if (source.equals(paneButtons.getButtons().get(8))) {
+            numberOfEmpties();
+        } else if (source.equals(paneButtons.getButtons().get(9))) {
+            numberOfCollisions();
+        } else if (source.equals(paneButtons.getButtons().get(10))) {
+            keySet();
+        }
+    }
+
+    private void dataPut() {
+        map.put(TEST_BOOKS_IDS[0], TEST_BOOK_1);
+        map.put(TEST_BOOKS_IDS[1], TEST_BOOK_2);
+        map.put(TEST_BOOKS_IDS[2], TEST_BOOK_3);
+
+        table.formTable(map.getMaxChainSize() * 2 + 1, colWidth);
+        String[][] modelList = map.getModelList(paneParam1.getTfOfTable().get(5).getText());
+        table.setItems(FXCollections.observableArrayList(modelList));
+        updateHashtableParameters(true);
+        KsGui.oun(taEvents, MESSAGES.getString("dataPut"));
+    }
+
+    private void removePairByKey() {
+        String inputKey = taInput.getText();
+        Object removedObject = map.remove(inputKey);
+
+        table.formTable(map.getMaxChainSize() * 2 + 1, colWidth);
+        String[][] modelList = map.getModelList(paneParam1.getTfOfTable().get(5).getText());
+        table.setItems(FXCollections.observableArrayList(modelList));
+        updateHashtableParameters(true);
+        KsGui.oun(taEvents, removedObject, MESSAGES.getString("removePairByKey"));
+    }
+
+    private void containsKey() {
+        String inputKey = taInput.getText();
+        Object foundObject = map.get(inputKey);
+
+        table.formTable(map.getMaxChainSize() * 2 + 1, colWidth);
+        String[][] modelList = map.getModelList(paneParam1.getTfOfTable().get(5).getText());
+        table.setItems(FXCollections.observableArrayList(modelList));
+        updateHashtableParameters(true);
+        KsGui.oun(taEvents, foundObject, MESSAGES.getString("mapPut"));
+    }
+
+    private void containsValue() {
+        String inputData = taInput.getText();
+        Book testBook = new Book(inputData);
+
+        ParsableHashMap hashMap = (ParsableHashMap) map;
+        if (hashMap.containsValue(testBook)) {
+            KsGui.oun(taEvents, inputData, MESSAGES.getString("containsValueTrue"));
+        } else {
+            KsGui.oun(taEvents, inputData, MESSAGES.getString("containsValueFalse"));
+        }
+    }
+
+    private void putIfAbsent() {
+        String inputData = taInput.getText();
+        String[] inputDataArray = inputData.split(" ");
+        Object testObject = null;
+        String inputKey = inputDataArray[0];
+        Book inputBookData = new Book(inputDataArray[1]);
+
+        switch (cmbCollisionTypes.getSelectionModel().getSelectedIndex()) {
+            case 0:
+                ParsableHashMap hashMap = (ParsableHashMap) map;
+                testObject = hashMap.putIfAbsent(inputKey, inputBookData);
+                break;
+
+            case 1:
+                ParsableHashMapOa hashMap2 = (ParsableHashMapOa) map;
+                testObject = hashMap2.putIfAbsent(inputKey, inputBookData);
+                break;
+        }
+        if (testObject == null) {
+            KsGui.oun(taEvents, inputBookData, MESSAGES.getString("putIfAbsentTrue"));
+        } else {
+            KsGui.oun(taEvents, testObject, MESSAGES.getString("putIfAbsentFalse"));
+        }
+
+        table.formTable(map.getMaxChainSize() * 2 + 1, colWidth);
+        String[][] modelList = map.getModelList(paneParam1.getTfOfTable().get(5).getText());
+        table.setItems(FXCollections.observableArrayList(modelList));
+        updateHashtableParameters(true);
+    }
+
+    private void numberOfEmpties() {
+        int numberOfEmpty = 0;
+        switch (cmbCollisionTypes.getSelectionModel().getSelectedIndex()) {
+            case 0:
+                ParsableHashMap hashMap = (ParsableHashMap) map;
+                numberOfEmpty = hashMap.numberOfEmpties();
+                break;
+
+            case 1:
+                ParsableHashMapOa hashMap2 = (ParsableHashMapOa) map;
+                numberOfEmpty = hashMap2.numberOfEmpties();
+                break;
+        }
+
+        KsGui.ounArgs(taEvents, MESSAGES.getString("numberOfEmpties"), numberOfEmpty);
+    }
+
+    private void numberOfCollisions() {
+        int numberOfCollisions = 0;
+        switch (cmbCollisionTypes.getSelectionModel().getSelectedIndex()) {
+            case 0:
+                ParsableHashMap hashMap = (ParsableHashMap) map;
+                numberOfCollisions = hashMap.getNumberOfCollisions();
+                break;
+
+            case 1:
+                ParsableHashMapOa hashMap2 = (ParsableHashMapOa) map;
+                numberOfCollisions = hashMap2.getNumberOfCollisions();
+                break;
+        }
+
+        KsGui.ounArgs(taEvents, MESSAGES.getString("numberOfColisions"), numberOfCollisions);
+    }
+
+    private void keySet() {
+        Set newSet = new HashSet<String>();
+        switch (cmbCollisionTypes.getSelectionModel().getSelectedIndex()) {
+            case 0:
+                ParsableHashMap hashMap = (ParsableHashMap) map;
+                newSet = hashMap.keySet();
+                break;
+
+            case 1:
+                ParsableHashMapOa hashMap2 = (ParsableHashMapOa) map;
+                newSet = hashMap2.keySet();
+                break;
+        }
+
+        KsGui.ounArgs(taEvents, MESSAGES.getString("mapPuts"), newSet.size());
+        for (Object object : newSet) {
+            KsGui.oun(taEvents, object);
         }
     }
 
@@ -308,15 +468,15 @@ public class MainWindow extends BorderPane implements EventHandler<ActionEvent> 
         readMapParameters();
         // Sukuriamas tuščias atvaizdis priklausomai nuo kolizijų tipo
         createMap();
-        // Jei failas nenurodytas - generuojami automobiliai ir talpinami atvaizdyje
+        // Jei failas nenurodytas - generuojamoms knygos ir talpinami atvaizdyje
         if (filePath == null) {
-            Car[] carsArray = carsGenerator.generateShuffleCarsAndIds(sizeOfGenSet, sizeOfInitialSubSet);
-            for (Car c : carsArray) {
+            Book[] booksArray = booksGenerator.generateShuffleBooksAndIds(sizeOfGenSet, sizeOfInitialSubSet);
+            for (Book c : booksArray) {
                 map.put(
-                        carsGenerator.getCarId(), //raktas
+                        booksGenerator.getBookId(), //raktas
                         c);
             }
-            KsGui.ounArgs(taEvents, MESSAGES.getString("mapPuts"), map.size());
+            KsGui.ounArgs(taEvents, MESSAGES.getString("mapPut"), map.size());
         } else { // Jei failas nurodytas skaitoma iš failo
             map.load(filePath);
             if (map.isEmpty()) {
@@ -338,15 +498,15 @@ public class MainWindow extends BorderPane implements EventHandler<ActionEvent> 
     }
 
     private void mapPut() {
-        Car car = carsGenerator.getCar();
+        Book book = booksGenerator.getBook();
         map.put(
-                carsGenerator.getCarId(), // Raktas
-                car);
+                booksGenerator.getBookId(), // Raktas
+                book);
         table.formTable(map.getMaxChainSize() * 2 + 1, colWidth);
         String[][] modelList = map.getModelList(paneParam1.getTfOfTable().get(5).getText());
         table.setItems(FXCollections.observableArrayList(modelList));
         updateHashtableParameters(true);
-        KsGui.oun(taEvents, car, MESSAGES.getString("mapPut"));
+        KsGui.oun(taEvents, book, MESSAGES.getString("mapPut"));
     }
 
     private void mapEfficiency() {
@@ -413,7 +573,10 @@ public class MainWindow extends BorderPane implements EventHandler<ActionEvent> 
     private void createMap() {
         switch (cmbCollisionTypes.getSelectionModel().getSelectedIndex()) {
             case 0:
-                map = new ParsableHashMap<>(String::new, Car::new, initialCapacity, loadFactor, ht);
+                map = new ParsableHashMap<>(String::new, Book::new, initialCapacity, loadFactor, ht);
+                break;
+            case 1:
+                map = new ParsableHashMapOa<>(String::new, Book::new, initialCapacity, loadFactor, ht);
                 break;
             // ...
             // Programuojant kitus kolizijų sprendimo metodus reikia papildyti switch sakinį
